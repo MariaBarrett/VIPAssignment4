@@ -1,5 +1,9 @@
+from __future__ import division
 import cv2
+import scipy.signal as si
+import numpy.linalg as lin
 from numpy import *
+from scipy.ndimage import filters
 
 #some constants and default parameters
 lk_params = dict(
@@ -79,6 +83,61 @@ class LKTracker(object):
 
 		self.prev_gray = self.gray
 
+	""" See below. """
+	def gauss_kern(self):
+	   h1 = 15
+	   h2 = 15
+	   x, y = mgrid[0:h2, 0:h1]
+	   x = x-h2/2
+	   y = y-h1/2
+	   sigma = 1.5
+	   g = exp( -( x**2 + y**2 ) / (2*sigma**2) )
+	   
+	   return g / g.sum()
+
+	""" See below. """
+	def deriv(self,im1, im2):
+	   g = self.gauss_kern()
+	   Img_smooth = si.convolve(im1,g,mode='same')
+	   fx,fy=gradient(Img_smooth)  
+	   ft = si.convolve2d(im1, 0.25 * ones((2,2))) + \
+	       si.convolve2d(im2, -0.25 * ones((2,2)))
+	                 
+	   fx = fx[0:fx.shape[0]-1, 0:fx.shape[1]-1]  
+	   fy = fy[0:fy.shape[0]-1, 0:fy.shape[1]-1]
+	   ft = ft[0:ft.shape[0]-1, 0:ft.shape[1]-1]
+	   
+	   return fx, fy, ft
+
+
+	""" Here's a bet on how the bloody Lucas-Kanade can be written. Sorry for no comments.
+	I just found it from here http://ascratchpad.blogspot.dk/2011/10/optical-flow-lucas-kanade-in-python.html
+	I suspect he first computes what I would call the harris corner detection.
+	 He does the gaussian filter manually and computes the harris values on the ENTIRE image and then identifies the relevant points in deriv/lk. 
+	 If nothing else, we should be able to use the last part here and rewrite the first thing to harris corner from OpenCV
+	  """
+	def lk(self, im1, im2, i, j, window_size) :
+		fx, fy, ft = self.deriv(im1, im2)
+		halfWindow = np.floor(window_size/2)
+
+		curFx = fx[i-halfWindow-1:i+halfWindow,
+		          j-halfWindow-1:j+halfWindow]
+		curFy = fy[i-halfWindow-1:i+halfWindow,
+		          j-halfWindow-1:j+halfWindow]
+		curFt = ft[i-halfWindow-1:i+halfWindow,
+		          j-halfWindow-1:j+halfWindow]
+		curFx = curFx.T
+		curFy = curFy.T
+		curFt = curFt.T
+
+		curFx = curFx.flatten(order='F')
+		curFy = curFy.flatten(order='F')
+		curFt = -curFt.flatten(order='F')
+
+		A = vstack((curFx, curFy)).T
+		U = dot(dot(lin.pinv(dot(A.T,A)),A.T),curFt)
+
+		return U[0], U[1]
 
 
 		"""Step to another frame. If no argument is given, step to the next frame. """

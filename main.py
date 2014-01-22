@@ -9,7 +9,7 @@ imnames = sorted(imnames)
 lkt = lktrack.LKTracker(imnames[:25])
 
 for im,ft in lkt.track():
-	print 'tracking %d features' %len(ft)
+	print 'Tracking %d features' %len(ft)
 
 #detect in first frame, track in the remaining
 
