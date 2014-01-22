@@ -12,10 +12,7 @@ subpix_params = dict(
 	winSize=(10,10),
 	criteria = (cv2.TERM_CRITERIA_COUNT | cv2.TERM_CRITERIA_EPS,20,0.03))
 
-feature_params = dict(
-	maxCorners=500,
-	qualityLevel=0.01,
-	minDistance=10)
+feature_params = dict(maxCorners=500,qualityLevel=0.01,minDistance=10)
 
 
 
@@ -63,10 +60,10 @@ class LKTracker(object):
 		self.gray = cv2.cvtColor(self.image,cv2.COLOR_BGR2GRAY)
 
 		#reshape to fit input format
-		tmp = float32(self.features).shape(-1,1,2)
+		tmp = float32(self.features).reshape(-1, 1, 2)
 
 		#calculate optical flow
-		features,status,track_error = cv2.calcOpticalFlowPyrLK(self.prev_gray,self.gray,tmp,None,**lk_params) 
+		features,status,track_error = cv2.calcOpticalFlowPyrLK(self.prev_gray,self.gray,tmp,None, **lk_params) 
 
 		#remove points lost
 		self.features = [p for (st,p) in zip(status,features) if st]
