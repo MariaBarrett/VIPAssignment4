@@ -87,7 +87,7 @@ class LKTracker(object):
 		#reshape to fit input format
 		tmp = float32(self.features).reshape(-1, 1, 2)
 
-		self.features = lk(prev_gray,self.gray,20,0,15)
+		self.features = lk(prev_gray,self.gray,0,0,15)
 
 		#clean tracks from lost points
 		features = array(features).reshape((-1,2))
@@ -149,16 +149,15 @@ class LKTracker(object):
 			self.current_frame = framenbr % len(self.imnames)
 
 
-	"""Drawing with CV itself. Not sure why this is so smart, but whatevs. Press any key to close window """
+	"""Drawing with CV itself. Not sure why this is so smart, but whatevs. Press any key to continue to next frame """
 	def draw(self):
 
 		#draw points as green circles
 		for point in self.features:
 			cv2.circle(self.image,(int(point[0][0]),int(point[0][1])),3,(0,255,0),-1)
 
-		cv2.imshow('LKtrack',self.image)
+		cv2.imshow('LKtrack',self.image[0])
 		cv2.waitKey()
-
 
 	def track(self):
 		"""Generator for stepping through a sequence. """
