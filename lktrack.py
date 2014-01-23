@@ -7,20 +7,10 @@ from scipy.ndimage import filters
 from PIL import Image
 
 #some constants and default parameters
-lk_params = dict(
-	winSize=(15,15),
-	maxLevel=2,
-	criteria=(cv2.TERM_CRITERIA_EPS | cv2.TERM_CRITERIA_COUNT,10,0.03)) #He gives no reason for this - lets test it
 
-subpix_params = dict(
-	zeroZone=(-1,-1),
-	winSize=(10,10),
-	criteria = (cv2.TERM_CRITERIA_COUNT | cv2.TERM_CRITERIA_EPS,20,0.03))
-
-feature_params = dict(maxCorners=500,qualityLevel=0.01,minDistance=10)
 
 """Class for Lucas-Kanade tracking with pyramidal optical flow.
-	All taken from the CV draft. 
+	'Skeleton' taken from CV Draft, but own LK implementation. 
 """
 class LKTracker(object):
 
@@ -32,28 +22,8 @@ class LKTracker(object):
 		self.current_frame = 0
 
 
-	"""
-	#Detect 'good features to track' (corners) in the current frame
-	#using sub-pixel accuracy.
-
-	def detect_points(self):
-		self.image = cv2.imread(self.imnames[self.current_frame])
-		self.gray = cv2.cvtColor(self.image,cv2.COLOR_BGR2GRAY)
-		print type(self.gray)
-		#search for good points
-		features = cv2.goodFeaturesToTrack(self.gray,**feature_params)
-
-		#refine the corner locations - 'arris Corner Detection?
-		cv2.cornerSubPix(self.gray,features, **subpix_params)
-
-		self.features = features
-		self.tracks = [[p] for p in features.reshape((-1,2))]
-
-		self.prev_gray = self.gray
-	"""
-
 	def harris(self,sigma=1.4,min_dist=10,threshold=0.01):
-		""" From CV Draft. Compute the Harris corner detector response function
+		""" Compute the Harris corner detector response function
 		for each pixel in a graylevel image. Return corners from a Harris response image
 		min_dist is the minimum number of pixels separating corners and image boundary. """
 
@@ -103,8 +73,9 @@ class LKTracker(object):
 		self.tracks = [[p] for p in filtered_coords.reshape((-1,2))]
 		self.prev_gray = self.gray
 
+
 	"""Here we track the detected features. Surprising eh?
-	 However, we should rewrite this into our own Lucas-Kanade"""
+	 We utilize the found features and try to calculate the OpticalFlow with the Lucas-Kanade method"""
 	def track_points(self):
 		if self.features != []:
 			self.step() #move to the next frame - surprisign too eh!
@@ -116,11 +87,7 @@ class LKTracker(object):
 		#reshape to fit input format
 		tmp = float32(self.features).reshape(-1, 1, 2)
 
-		#calculate optical flow
-		features,status,track_error = cv2.calcOpticalFlowPyrLK(self.prev_gray,self.gray,tmp,None, **lk_params) 
-
-		#remove points lost
-		self.features = [p for (st,p) in zip(status,features) if st]
+		self.features = lk(prev_gray,self.gray,20,0,15)
 
 		#clean tracks from lost points
 		features = array(features).reshape((-1,2))
@@ -133,59 +100,43 @@ class LKTracker(object):
 
 		self.prev_gray = self.gray
 
+	""" Here we do the necessary derivations as to satisfy the Harris matrix later on. 
 	"""
-	def gauss_kern(self):
-	   h1 = 15
-	   h2 = 15
-	   x, y = mgrid[0:h2, 0:h1]
-	   x = x-h2/2
-	   y = y-h1/2
-	   sigma = 1.5
-	   g = exp( -( x**2 + y**2 ) / (2*sigma**2) )
-	   
-	   return g / g.sum()
-
 	def deriv(self,im1, im2):
-	   g = self.gauss_kern()
+	   g = filters.gaussian_filter()
 	   Img_smooth = si.convolve(im1,g,mode='same')
 	   fx,fy=gradient(Img_smooth)  
-	   ft = si.convolve2d(im1, 0.25 * ones((2,2))) + \
-	       si.convolve2d(im2, -0.25 * ones((2,2)))
+	   ft = si.convolve2d(im1, 0.25 * ones((2,2))) + si.convolve2d(im2, -0.25 * ones((2,2)))
 	                 
 	   fx = fx[0:fx.shape[0]-1, 0:fx.shape[1]-1]  
 	   fy = fy[0:fy.shape[0]-1, 0:fy.shape[1]-1]
 	   ft = ft[0:ft.shape[0]-1, 0:ft.shape[1]-1]
 	   
 	   return fx, fy, ft
-	"""
-
 	
-	""" Here's a bet on how the bloody Lucas-Kanade can be written. Sorry for no comments.
-	I just found it from here http://ascratchpad.blogspot.dk/2011/10/optical-flow-lucas-kanade-in-python.html
-	I suspect he first computes what I would call the harris corner detection.
-	 He does the gaussian filter manually and computes the harris values on the ENTIRE image and then identifies the relevant points in deriv/lk. 
-	 If nothing else, we should be able to use the last part here and rewrite the first thing to harris corner from OpenCV
-	  """
-	def lk(self, im1, im2, i, j, window_size) :
+	
+	""" Here's a bet on how the bloody Lucas-Kanade can be written. 
+	"""
+	def lk(self, im1, im2, i, j, window_size):
 		fx, fy, ft = self.deriv(im1, im2)
-		halfWindow = np.floor(window_size/2)
+		hwin = np.floor(window_size/2)
 
-		curFx = fx[i-halfWindow-1:i+halfWindow,
-		          j-halfWindow-1:j+halfWindow]
-		curFy = fy[i-halfWindow-1:i+halfWindow,
-		          j-halfWindow-1:j+halfWindow]
-		curFt = ft[i-halfWindow-1:i+halfWindow,
-		          j-halfWindow-1:j+halfWindow]
-		curFx = curFx.T
-		curFy = curFy.T
-		curFt = curFt.T
+		Fx = fx[i-hwin-1:i+hwin,
+		          j-hwin-1:j+hwin]
+		Fy = fy[i-hwin-1:i+hwin,
+		          j-hwin-1:j+hwin]
+		Ft = ft[i-hwin-1:i+hwin,
+		          j-hwin-1:j+hwin]
+		Fx = Fx.T
+		Fy = Fy.T
+		Ft = Ft.T
 
-		curFx = curFx.flatten(order='F')
-		curFy = curFy.flatten(order='F')
-		curFt = -curFt.flatten(order='F')
+		Fx = Fx.flatten(order='F')
+		Fy = Fy.flatten(order='F')
+		Ft = -Ft.flatten(order='F')
 
-		A = vstack((curFx, curFy)).T
-		U = dot(dot(lin.pinv(dot(A.T,A)),A.T),curFt)
+		A = vstack((Fx, Fy)).T
+		U = dot(dot(lin.pinv(dot(A.T,A)),A.T),Ft)
 
 		return U[0], U[1]
 
