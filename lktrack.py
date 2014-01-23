@@ -4,6 +4,7 @@ import scipy.signal as si
 import numpy.linalg as lin
 from numpy import *
 from scipy.ndimage import filters
+from PIL import Image
 
 #some constants and default parameters
 lk_params = dict(
@@ -18,8 +19,6 @@ subpix_params = dict(
 
 feature_params = dict(maxCorners=500,qualityLevel=0.01,minDistance=10)
 
-
-
 """Class for Lucas-Kanade tracking with pyramidal optical flow.
 	All taken from the CV draft. 
 """
@@ -31,7 +30,6 @@ class LKTracker(object):
 		self.features = [] #corner points
 		self.tracks = [] #obviously the tracked features
 		self.current_frame = 0
-
 
 
 	""" Detect 'good features to track' (corners) in the current frame
@@ -51,6 +49,51 @@ class LKTracker(object):
 
 		self.prev_gray = self.gray
 
+	def harris(sigma=1.4,min_dist=10,threshold=0.03):
+		""" From CV Draft. Compute the Harris corner detector response function
+		for each pixel in a graylevel image. Return corners from a Harris response image
+		min_dist is the minimum number of pixels separating corners and image boundary. """
+		
+		#self.image = cv2.imread(self.imnames[self.current_frame])
+		self.image = array(Image.open(self.imnames[self.current_frame]).convert('L')) 
+
+		# derivatives
+		imx = zeros(im.shape)
+		filters.gaussian_filter(im, (sigma,sigma), (0,1), imx) 
+		imy = zeros(im.shape)
+		filters.gaussian_filter(im, (sigma,sigma), (1,0), imy)
+
+			# compute components of the Harris matrix
+		Wxx = filters.gaussian_filter(imx*imx,sigma) 
+		Wxy = filters.gaussian_filter(imx*imy,sigma) 
+		Wyy = filters.gaussian_filter(imy*imy,sigma)
+		# determinant and trace
+		Wdet = Wxx*Wyy - Wxy**2
+		Wtr = Wxx + Wyy
+		harrisim = Wdet / Wtr
+
+		# find top corner candidates above a threshold
+		corner_threshold = harrisim.max() * threshold
+		harrisim_t = (harrisim > corner_threshold) * 1
+
+		# get coordinates of candidates
+		coords = array(harrisim_t.nonzero()).T # ...and their values
+		candidate_values = [harrisim[c[0],c[1]] for c in coords] 
+		# sort candidates
+		index = argsort(candidate_values)
+			
+		# store allowed point locations in array
+		allowed_locations = zeros(harrisim.shape) 
+		allowed_locations[min_dist:-min_dist,min_dist:-min_dist] = 1
+			
+		# select the best points taking min_distance into account
+		filtered_coords = [] 
+		for i in index:
+			if allowed_locations[coords[i,0],coords[i,1]] == 1:
+				filtered_coords.append(coords[i]) 
+				allowed_locations[(coords[i,0]-min_dist):(coords[i,0]+min_dist),
+					(coords[i,1]-min_dist):(coords[i,1]+min_dist)] = 0 
+		self.features = filtered_coords
 
 
 	"""Here we track the detected features. Surprising eh?
@@ -83,7 +126,7 @@ class LKTracker(object):
 
 		self.prev_gray = self.gray
 
-	""" See below. """
+	"""
 	def gauss_kern(self):
 	   h1 = 15
 	   h2 = 15
@@ -95,7 +138,6 @@ class LKTracker(object):
 	   
 	   return g / g.sum()
 
-	""" See below. """
 	def deriv(self,im1, im2):
 	   g = self.gauss_kern()
 	   Img_smooth = si.convolve(im1,g,mode='same')
@@ -108,8 +150,9 @@ class LKTracker(object):
 	   ft = ft[0:ft.shape[0]-1, 0:ft.shape[1]-1]
 	   
 	   return fx, fy, ft
+	"""
 
-
+	
 	""" Here's a bet on how the bloody Lucas-Kanade can be written. Sorry for no comments.
 	I just found it from here http://ascratchpad.blogspot.dk/2011/10/optical-flow-lucas-kanade-in-python.html
 	I suspect he first computes what I would call the harris corner detection.
@@ -140,7 +183,7 @@ class LKTracker(object):
 		return U[0], U[1]
 
 
-		"""Step to another frame. If no argument is given, step to the next frame. """
+	"""Step to another frame. If no argument is given, step to the next frame. """
 	def step(self,framenbr=None):
 		if framenbr is None:
 			self.current_frame = (self.current_frame +1) % len(self.imnames)
@@ -164,7 +207,7 @@ class LKTracker(object):
 
 		for i in range(len(self.imnames)):
 			if self.features == []:
-				self.detect_points()
+				self.harris()
 			else:
 				self.track_points()
 
