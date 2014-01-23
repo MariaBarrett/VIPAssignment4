@@ -52,7 +52,7 @@ class LKTracker(object):
 		self.prev_gray = self.gray
 	"""
 
-	def harris(self,sigma=3,min_dist=10,threshold=0.03):
+	def harris(self,sigma=1.4,min_dist=10,threshold=0.01):
 		""" From CV Draft. Compute the Harris corner detector response function
 		for each pixel in a graylevel image. Return corners from a Harris response image
 		min_dist is the minimum number of pixels separating corners and image boundary. """
@@ -96,7 +96,9 @@ class LKTracker(object):
 				filtered_coords.append(coords[i]) 
 				allowed_locations[(coords[i,0]-min_dist):(coords[i,0]+min_dist),
 					(coords[i,1]-min_dist):(coords[i,1]+min_dist)] = 0 
+
 		filtered_coords = array(filtered_coords)
+
 		self.features = filtered_coords
 		self.tracks = [[p] for p in filtered_coords.reshape((-1,2))]
 		self.prev_gray = self.gray
