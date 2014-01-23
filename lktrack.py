@@ -32,12 +32,14 @@ class LKTracker(object):
 		self.current_frame = 0
 
 
-	""" Detect 'good features to track' (corners) in the current frame
-	using sub-pixel accuracy. """
+	"""
+	#Detect 'good features to track' (corners) in the current frame
+	#using sub-pixel accuracy.
+
 	def detect_points(self):
 		self.image = cv2.imread(self.imnames[self.current_frame])
 		self.gray = cv2.cvtColor(self.image,cv2.COLOR_BGR2GRAY)
-
+		print type(self.gray)
 		#search for good points
 		features = cv2.goodFeaturesToTrack(self.gray,**feature_params)
 
@@ -48,20 +50,21 @@ class LKTracker(object):
 		self.tracks = [[p] for p in features.reshape((-1,2))]
 
 		self.prev_gray = self.gray
+	"""
 
-	def harris(sigma=1.4,min_dist=10,threshold=0.03):
+	def harris(self,sigma=3,min_dist=10,threshold=0.03):
 		""" From CV Draft. Compute the Harris corner detector response function
 		for each pixel in a graylevel image. Return corners from a Harris response image
 		min_dist is the minimum number of pixels separating corners and image boundary. """
-		
-		#self.image = cv2.imread(self.imnames[self.current_frame])
-		self.image = array(Image.open(self.imnames[self.current_frame]).convert('L')) 
+
+		self.image = cv2.imread(self.imnames[self.current_frame])
+		self.gray = cv2.cvtColor(self.image,cv2.COLOR_BGR2GRAY)
 
 		# derivatives
-		imx = zeros(im.shape)
-		filters.gaussian_filter(im, (sigma,sigma), (0,1), imx) 
-		imy = zeros(im.shape)
-		filters.gaussian_filter(im, (sigma,sigma), (1,0), imy)
+		imx = zeros(self.gray.shape)
+		filters.gaussian_filter(self.gray, (sigma,sigma), (0,1), imx) 
+		imy = zeros(self.gray.shape)
+		filters.gaussian_filter(self.gray, (sigma,sigma), (1,0), imy)
 
 			# compute components of the Harris matrix
 		Wxx = filters.gaussian_filter(imx*imx,sigma) 
@@ -93,8 +96,10 @@ class LKTracker(object):
 				filtered_coords.append(coords[i]) 
 				allowed_locations[(coords[i,0]-min_dist):(coords[i,0]+min_dist),
 					(coords[i,1]-min_dist):(coords[i,1]+min_dist)] = 0 
+		filtered_coords = array(filtered_coords)
 		self.features = filtered_coords
-
+		self.tracks = [[p] for p in filtered_coords.reshape((-1,2))]
+		self.prev_gray = self.gray
 
 	"""Here we track the detected features. Surprising eh?
 	 However, we should rewrite this into our own Lucas-Kanade"""
