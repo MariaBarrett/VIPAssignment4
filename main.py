@@ -7,7 +7,6 @@ from PIL import Image
 
 imnames = glob.glob("dudekface/*/*.pgm")
 imnames = sorted(imnames)
-gray()
 
 
 #create tracker object
@@ -15,7 +14,7 @@ lkt = lktrack.LKTracker(imnames[:25])
 
 for im,ft in lkt.track():
 	print 'Tracking %d features' %len(ft)
-	
+
 
 #detect in first frame, track in the remaining
 
