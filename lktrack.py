@@ -87,9 +87,11 @@ class LKTracker(object):
 		#reshape to fit input format
 		tmp = float32(self.features).reshape(-1, 1, 2)
 
-		self.features = lk(prev_gray,self.gray,0,0,15)
-
+		self.features = self.lk(self.prev_gray,self.gray,0,0,15)
+		
+		features = self.features
 		#clean tracks from lost points
+		"""
 		features = array(features).reshape((-1,2))
 		for i,f in enumerate(features):
 			self.tracks[i].append(f)
@@ -97,14 +99,27 @@ class LKTracker(object):
 		ndx.reverse() #remove from back
 		for i in ndx:
 			self.tracks.pop(i)
-
+		"""
 		self.prev_gray = self.gray
+
+	def gauss_kern(self):
+	   h1 = 15
+	   h2 = 15
+	   x, y = mgrid[0:h2, 0:h1]
+	   x = x-h2/2
+	   y = y-h1/2
+	   sigma = 1.4
+	   g = exp( -( x**2 + y**2 ) / (2*sigma**2) );
+	   return g / g.sum()
 
 	""" Here we do the necessary derivations as to satisfy the Harris matrix later on. 
 	"""
 	def deriv(self,im1, im2):
-	   g = filters.gaussian_filter()
+	   """
+	   g = self.gauss_kern()
 	   Img_smooth = si.convolve(im1,g,mode='same')
+	   """
+	   Img_smooth = filters.gaussian_filter(im1,1.4)
 	   fx,fy=gradient(Img_smooth)  
 	   ft = si.convolve2d(im1, 0.25 * ones((2,2))) + si.convolve2d(im2, -0.25 * ones((2,2)))
 	                 
@@ -119,7 +134,7 @@ class LKTracker(object):
 	"""
 	def lk(self, im1, im2, i, j, window_size):
 		fx, fy, ft = self.deriv(im1, im2)
-		hwin = np.floor(window_size/2)
+		hwin = floor(window_size/2)
 
 		Fx = fx[i-hwin-1:i+hwin,
 		          j-hwin-1:j+hwin]
@@ -171,4 +186,5 @@ class LKTracker(object):
 		#create a copy in RGB
 		f = array(self.features).reshape(-1,2)
 		im = cv2.cvtColor(self.image,cv2.COLOR_BGR2RGB)
+		print im
 		yield im,f
