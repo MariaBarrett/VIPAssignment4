@@ -105,8 +105,6 @@ class LKTracker(object):
 		tmp = array(tmp).reshape((-1,2))
 		for i,f in enumerate(tmp):
 			self.tracks[i].append(f)
-		print self.tracks
-		print len(self.tracks[0])
 
 		
 		for i in range(len(tmpf)):
@@ -191,6 +189,7 @@ class LKTracker(object):
 	def step(self,framenbr=None):
 		if framenbr is None:
 			self.current_frame = (self.current_frame +1) % len(self.imnames)
+			print "Tracking on frame number: ",self.current_frame
 		else:
 			self.current_frame = framenbr % len(self.imnames)
 
