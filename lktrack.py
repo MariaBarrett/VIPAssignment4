@@ -20,9 +20,10 @@ class LKTracker(object):
 		self.features = [] #corner points
 		self.tracks = [] #obviously the tracked features
 		self.current_frame = 0
+		self.sigma = 3
 
 
-	def harris(self,sigma=1.4,min_dist=10,threshold=0.03):
+	def harris(self,min_dist=8,threshold=0.05):
 		""" Compute the Harris corner detector response function
 		for each pixel in a graylevel image. Return corners from a Harris response image
 		min_dist is the minimum number of pixels separating corners and image boundary. """
@@ -32,14 +33,14 @@ class LKTracker(object):
 
 		# derivatives
 		imx = zeros(self.gray.shape)
-		filters.gaussian_filter(self.gray, (sigma,sigma), (0,1), imx) 
+		filters.gaussian_filter(self.gray, (self.sigma,self.sigma), (0,1), imx) 
 		imy = zeros(self.gray.shape)
-		filters.gaussian_filter(self.gray, (sigma,sigma), (1,0), imy)
+		filters.gaussian_filter(self.gray, (self.sigma,self.sigma), (1,0), imy)
 
 			# compute components of the Harris matrix
-		Wxx = filters.gaussian_filter(imx*imx,sigma) 
-		Wxy = filters.gaussian_filter(imx*imy,sigma) 
-		Wyy = filters.gaussian_filter(imy*imy,sigma)
+		Wxx = filters.gaussian_filter(imx*imx,self.sigma) 
+		Wxy = filters.gaussian_filter(imx*imy,self.sigma) 
+		Wyy = filters.gaussian_filter(imy*imy,self.sigma)
 		# determinant and trace
 		Wdet = Wxx*Wyy - Wxy**2
 		Wtr = Wxx + Wyy
@@ -90,13 +91,17 @@ class LKTracker(object):
 		tmpf = []
 
 		#print tmp
-		print type(tmp)
+		#print type(tmp)
+		tmpf=[]
 		for elem in tmp:
-			tmpf = self.lk(self.prev_gray,self.gray,elem[0][0],elem[0][1],15)
-		print tmpf
-		
+			inner = []
+			inner = self.lk(self.prev_gray,self.gray,elem[0][0],elem[0][1],15)
+			tmpf.append(inner)
 
-		print len(self.features)
+		for i in range(len(tmpf)):
+			self.features[i][0] = self.features[i][0]+tmpf[i][0]
+			self.features[i][1] = self.features[i][1]+tmpf[i][1]
+		
 		#clean tracks from lost points
 		self.prev_gray = self.gray
 
@@ -106,8 +111,7 @@ class LKTracker(object):
 	   x, y = mgrid[0:h2, 0:h1]
 	   x = x-h2/2
 	   y = y-h1/2
-	   sigma = 1.4
-	   g = exp( -( x**2 + y**2 ) / (2*sigma**2) );
+	   g = exp( -( x**2 + y**2 ) / (2*self.sigma**2) );
 	   return g / g.sum()
 
 	""" Here we do the necessary derivations as to satisfy the Harris matrix later on. 
@@ -117,7 +121,7 @@ class LKTracker(object):
 	   g = self.gauss_kern()
 	   Img_smooth = si.convolve(im1,g,mode='same')
 	   """
-	   Img_smooth = filters.gaussian_filter(im1,1.4)
+	   Img_smooth = filters.gaussian_filter(im1,self.sigma)
 	   fx,fy=gradient(Img_smooth)  
 	   ft = si.convolve2d(im1, 0.25 * ones((2,2))) + si.convolve2d(im2, -0.25 * ones((2,2)))
 	                 
