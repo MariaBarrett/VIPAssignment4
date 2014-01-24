@@ -130,35 +130,6 @@ class LKTracker(object):
 	   return fx, fy, ft
 	
 
-	""" """
-	def lk2(self, im1, im2, i, j, window_size):
-
-		""" Here we want to create the Harris matrix"""
-		imx = zeros(self.gray.shape)
-		filters.gaussian_filter(self.gray, (self.sigma,self.sigma), (0,1), imx) 
-		imy = zeros(self.gray.shape)
-		filters.gaussian_filter(self.gray, (self.sigma,self.sigma), (1,0), imy)
-
-			# compute components of the Harris matrix
-		Wxx = filters.gaussian_filter(imx*imx,self.sigma) 
-		Wxy = filters.gaussian_filter(imx*imy,self.sigma) 
-		Wyy = filters.gaussian_filter(imy*imy,self.sigma) 
-		
-		HM = array([Wxx,Wxy],
-					[Wxy,Wyy])
-
-		""" Here we want to create the residual matrix """
-		fx, fy, ft = self.deriv(im1, im2)
-		hwin = window_size/2
-		Fx = fx[i-hwin-1:i+hwin,
-		          j-hwin-1:j+hwin]
-		Fy = fy[i-hwin-1:i+hwin,
-		          j-hwin-1:j+hwin]
-		Ft = ft[i-hwin-1:i+hwin,
-		          j-hwin-1:j+hwin]
-
-
-
 
 	""" Here's a bet on how the bloody Lucas-Kanade can be written. """
 	def lk(self, im1, im2, i, j, window_size):
