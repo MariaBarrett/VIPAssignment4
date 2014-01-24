@@ -7,7 +7,10 @@ from scipy.ndimage import filters
 from PIL import Image
 
 #some constants and default parameters
-
+#for our implementation
+winsize = 50 
+#for OpenCV's implementation
+lk_params = dict(winSize=(3,3),maxLevel=2, criteria=(cv2.TERM_CRITERIA_EPS | cv2.TERM_CRITERIA_COUNT,10,0.03))
 
 """Class for Lucas-Kanade tracking with pyramidal optical flow.
 	'Skeleton' taken from CV Draft, but own LK implementation. 
@@ -23,7 +26,7 @@ class LKTracker(object):
 		self.sigma = 3
 
 
-	def harris(self,min_dist=8,threshold=0.1):
+	def harris(self,min_dist=10,threshold=0.01):
 		""" Compute the Harris corner detector response function
 		for each pixel in a graylevel image. Return corners from a Harris response image
 		min_dist is the minimum number of pixels separating corners and image boundary. """
@@ -82,7 +85,7 @@ class LKTracker(object):
 
 	"""Here we track the detected features. Surprising eh?
 	 We utilize the found features and try to calculate the OpticalFlow with the Lucas-Kanade method"""
-	def track_points(self):
+	def our_track_points(self):
 		if self.features != []:
 			self.step() #move to the next frame - surprisign too eh!
 
@@ -99,23 +102,46 @@ class LKTracker(object):
 		ims2 = filters.gaussian_filter(self.gray,self.sigma)
 		for elem in tmp:
 			inner = []
-			inner = self.lk(ims1,ims2,elem[0][0],elem[0][1],15)
+			inner = self.lk(ims1,ims2,elem[0][0],elem[0][1],winsize)
 			tmpf.append(inner)
 
 		tmp = array(tmp).reshape((-1,2))
 		for i,f in enumerate(tmp):
 			self.tracks[i].append(f)
-
 		
 		for i in range(len(tmpf)):
 			self.features[i][0] = tmp[i][0]+tmpf[i][0]
 			self.features[i][1] = tmp[i][1]+tmpf[i][1]
 
-		
-
-		
 		self.prev_gray = self.gray
 
+	def CV_track_points(self):
+		""" Track the detected features using OpenCV. The code is copied from Jan Erik Solem "Programming Computer Vision with Python""
+		if self.features != []:
+			self.step() # move to the next frame
+	    
+	    # load the image and create grayscale
+		self.image = cv2.imread(self.imnames[self.current_frame]) 
+		self.gray = cv2.cvtColor(self.image,cv2.COLOR_BGR2GRAY)
+	    
+	    # reshape to fit input format
+		tmp = float32(self.features).reshape(-1, 1, 2)
+	    
+	    # calculate optical flow
+		features,status,track_error = cv2.calcOpticalFlowPyrLK(self.prev_gray, self.gray,tmp,None,**lk_params)
+	    
+	    # remove points lost
+		self.features = [p for (st,p) in zip(status,features) if st]
+	    
+	    # clean tracks from lost points
+		features = array(features).reshape((-1,2)) 
+		for i,f in enumerate(features):
+			self.tracks[i].append(f)
+		ndx = [i for (i,st) in enumerate(status) if not st] 
+		ndx.reverse() #remove from back
+		for i in ndx:
+	    		self.tracks.pop(i)
+		self.prev_gray = self.gray
 
 	""" Here we do the necessary derivations as to satisfy the Harris matrix later on. 
 	"""
@@ -182,7 +208,7 @@ class LKTracker(object):
 			if self.features == []:
 				self.harris()
 			else:
-				self.track_points()
+				self.CV_track_points() # change between self.our_track_points() and self.CV_track_points()
 
 		#create a copy in RGB
 		f = array(self.features).reshape(-1,2)
