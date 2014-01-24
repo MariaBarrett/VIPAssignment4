@@ -213,7 +213,8 @@ class LKTracker(object):
 			if self.features == []:
 				self.harris()
 			else:
-				self.our_track_points() # change between self.our_track_points() and self.CV_track_points()
+				#self.CV_track_points() # change between self.our_track_points() and self.CV_track_points()
+				self.our_track_points()
 
 		#create a copy in RGB
 		f = array(self.features).reshape(-1,2)

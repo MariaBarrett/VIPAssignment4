@@ -19,9 +19,10 @@ for im,ft in lkt.track():
 # plot the tracks
 plt.imshow(im) 
 for p in ft:
-	plt.plot(p[1],p[0],'bo')
+	plt.plot(p[1],p[0],'bo') #Use this for our
+	#plt.plot(p[0],p[1],'bo') #Use this for OpenCV
 for t in lkt.tracks:
-	plt.plot([p[1] for p in t],[p[0] for p in t],'r-')
-	#plt.plot([p[0] for p in t],[p[1] for p in t]) #switch 1 and 0 araound when running our implementation
+	plt.plot([p[1] for p in t],[p[0] for p in t],'r-') #use this for our implementation
+	#plt.plot([p[0] for p in t],[p[1] for p in t]) #use this for OpenCV
 plt.axis('off')
 plt.show()
