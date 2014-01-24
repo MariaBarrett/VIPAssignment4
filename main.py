@@ -13,20 +13,13 @@ imnames = sorted(imnames)
 lkt = lktrack.LKTracker(imnames[:5])
 
 for im,ft in lkt.track():
-	print 'Tracking %d features' %len(ft)
+	print 'tracking %d features' % len(ft)
 
-
-#detect in first frame, track in the remaining
-
-figure()
-imshow(im)
+# plot the tracks
+imshow(im) 
 for p in ft:
-	plot(p[1],p[0],'bo')
-"""
+	plot(p[1],p[0],'bo') 
 for t in lkt.tracks:
-	print t[0][0]
-	plot(t[0][1],t[0][0],'r-')
-	#plot([p[1] for p in t],[p[0] for p in t],'r-')
-"""
+	plot([p[1] for p in t],[p[0] for p in t]) 
 axis('off')
 show()
