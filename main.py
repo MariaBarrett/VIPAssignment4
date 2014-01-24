@@ -22,6 +22,6 @@ plt.imshow(im)
 for p in ft:
 	plt.plot(p[1],p[0],'bo')
 for t in lkt.tracks:
-	plt.plot([p[1] for p in t],[p[0] for p in t])
+	plt.plot([p[1] for p in t],[p[0] for p in t],'r-')
 plt.axis('off')
 plt.show()

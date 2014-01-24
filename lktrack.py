@@ -23,9 +23,9 @@ class LKTracker(object):
 		self.sigma = 3
 
 
-	def harris(self,min_dist=8,threshold=0.1):
+	def harris(self,min_dist=14,threshold=0.01):
 		""" Compute the Harris corner detector response function
-		for each pixel in a graylevel image. Return corners from a Harris response image
+		for each pixel in a graylevel image - as seen in the CV book. Return corners from a Harris response image
 		min_dist is the minimum number of pixels separating corners and image boundary. """
 		print "Finding useful features."
 
@@ -75,6 +75,7 @@ class LKTracker(object):
 		tracks = [[p] for p in filtered_coords.reshape((-1,2))]
 		self.tracks = tracks
 		self.prev_gray = self.gray
+		print len(self.features)
 
 		print "Done."
 
@@ -96,10 +97,10 @@ class LKTracker(object):
 
 		tmpf=[]
 		ims1 = filters.gaussian_filter(self.prev_gray,self.sigma)
-		ims2 = filters.gaussian_filter(self.gray,self.sigma)
+		#ims2 = filters.gaussian_filter(self.gray,self.sigma)
 		for elem in tmp:
 			inner = []
-			inner = self.lk(ims1,ims2,elem[0][0],elem[0][1],15)
+			inner = self.lk(ims1,self.gray,elem[0][0],elem[0][1],15)
 			tmpf.append(inner)
 
 		tmp = array(tmp).reshape((-1,2))
@@ -110,9 +111,6 @@ class LKTracker(object):
 		for i in range(len(tmpf)):
 			self.features[i][0] = tmp[i][0]+tmpf[i][0]
 			self.features[i][1] = tmp[i][1]+tmpf[i][1]
-
-		
-
 		
 		self.prev_gray = self.gray
 
@@ -141,7 +139,7 @@ class LKTracker(object):
 		Fy = fy[i-hwin-1:i+hwin,
 		          j-hwin-1:j+hwin]
 		Ft = ft[i-hwin-1:i+hwin,
-		          j-hwin-1:j+hwin]
+		          j-hwin-1:j+hwin]	
 		Fx = Fx.T
 		Fy = Fy.T
 		Ft = Ft.T
@@ -153,6 +151,7 @@ class LKTracker(object):
 		A = vstack((Fx, Fy)).T
 		A = dot(lin.pinv(dot(A.T,A)),A.T)
 		U = dot(A,Ft)
+
 		return U[0], U[1]
 
 
