@@ -23,7 +23,7 @@ class LKTracker(object):
 		self.sigma = 3
 
 
-	def harris(self,min_dist=8,threshold=0.05):
+	def harris(self,min_dist=8,threshold=0.1):
 		""" Compute the Harris corner detector response function
 		for each pixel in a graylevel image. Return corners from a Harris response image
 		min_dist is the minimum number of pixels separating corners and image boundary. """
@@ -72,7 +72,8 @@ class LKTracker(object):
 		filtered_coords = array(filtered_coords)
 
 		self.features = filtered_coords
-		self.tracks = [[p] for p in filtered_coords.reshape((-1,2))]
+		tracks = [[p] for p in filtered_coords.reshape((-1,2))]
+		self.tracks = tracks
 		self.prev_gray = self.gray
 
 		print "Done."
@@ -93,8 +94,6 @@ class LKTracker(object):
 		tmp = float32(self.features).reshape(-1, 1, 2)
 		tmpf = []
 
-		#print tmp
-		#print type(tmp)
 		tmpf=[]
 		ims1 = filters.gaussian_filter(self.prev_gray,self.sigma)
 		ims2 = filters.gaussian_filter(self.gray,self.sigma)
@@ -103,12 +102,20 @@ class LKTracker(object):
 			inner = self.lk(ims1,ims2,elem[0][0],elem[0][1],15)
 			tmpf.append(inner)
 
-		for i in range(len(tmpf)):
-			self.features[i][0] = self.features[i][0]+tmpf[i][0]
-			self.features[i][1] = self.features[i][1]+tmpf[i][1]
+		tmp = array(tmp).reshape((-1,2))
+		for i,f in enumerate(tmp):
+			self.tracks[i].append(f)
 		print self.tracks
+		print len(self.tracks[0])
+
 		
-		#clean tracks from lost points
+		for i in range(len(tmpf)):
+			self.features[i][0] = tmp[i][0]+tmpf[i][0]
+			self.features[i][1] = tmp[i][1]+tmpf[i][1]
+
+		
+
+		
 		self.prev_gray = self.gray
 
 

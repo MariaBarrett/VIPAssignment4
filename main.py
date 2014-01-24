@@ -10,7 +10,7 @@ imnames = sorted(imnames,reverse=True)
 
 print "Calculating."
 #create tracker object
-lkt = lktrack.LKTracker(imnames[:5])
+lkt = lktrack.LKTracker(imnames[:25])
 
 ims = []
 for im,ft in lkt.track():
@@ -22,9 +22,9 @@ for im,ft in lkt.track():
 plt.figure()
 plt.imshow(im)
 for p in ft:
-	plt.plot(p[1],p[0],'bo',zorder=1)
+	plt.plot(p[1],p[0],'bo')
 for t in lkt.tracks:
-	plt.plot(t[0][1],t[0][0],'r-',zorder=2)
+	plt.plot([p[1] for p in t],[p[0] for p in t])
 
 plt.axis('off')
 plt.show()
