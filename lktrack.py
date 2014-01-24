@@ -26,9 +26,10 @@ class LKTracker(object):
 		self.sigma = 3
 
 
+
 	def harris(self,min_dist=10,threshold=0.01):
 		""" Compute the Harris corner detector response function
-		for each pixel in a graylevel image. Return corners from a Harris response image
+		for each pixel in a graylevel image - as seen in the CV book. Return corners from a Harris response image
 		min_dist is the minimum number of pixels separating corners and image boundary. """
 		print "Finding useful features."
 
@@ -78,6 +79,7 @@ class LKTracker(object):
 		tracks = [[p] for p in filtered_coords.reshape((-1,2))]
 		self.tracks = tracks
 		self.prev_gray = self.gray
+		print len(self.features)
 
 		print "Done."
 
@@ -116,7 +118,7 @@ class LKTracker(object):
 		self.prev_gray = self.gray
 
 	def CV_track_points(self):
-		""" Track the detected features using OpenCV. The code is copied from Jan Erik Solem "Programming Computer Vision with Python""
+		""" Track the detected features using OpenCV. The code is copied from Jan Erik Solem "Programming Computer Vision with Python"""
 		if self.features != []:
 			self.step() # move to the next frame
 	    
@@ -167,7 +169,7 @@ class LKTracker(object):
 		Fy = fy[i-hwin-1:i+hwin,
 		          j-hwin-1:j+hwin]
 		Ft = ft[i-hwin-1:i+hwin,
-		          j-hwin-1:j+hwin]
+		          j-hwin-1:j+hwin]	
 		Fx = Fx.T
 		Fy = Fy.T
 		Ft = Ft.T
@@ -179,6 +181,7 @@ class LKTracker(object):
 		A = vstack((Fx, Fy)).T
 		A = dot(lin.pinv(dot(A.T,A)),A.T)
 		U = dot(A,Ft)
+
 		return U[0], U[1]
 
 
@@ -208,8 +211,8 @@ class LKTracker(object):
 			if self.features == []:
 				self.harris()
 			else:
-				self.CV_track_points() # change between self.our_track_points() and self.CV_track_points()
-
+				#self.CV_track_points() # change between self.our_track_points() and self.CV_track_points()
+				self.our_track_points()
 		#create a copy in RGB
 		f = array(self.features).reshape(-1,2)
 		im = cv2.cvtColor(self.image,cv2.COLOR_BGR2RGB)
