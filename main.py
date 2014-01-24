@@ -1,19 +1,21 @@
 from __future__ import division
 import lktrack 
 import glob
-from pylab import *	
+import pylab as plt
 from PIL import Image
 
 
 imnames = glob.glob("dudekface/*/*.pgm")
-imnames = sorted(imnames)
+imnames = sorted(imnames,reverse=True)
 
-
+print "Calculating."
 #create tracker object
 lkt = lktrack.LKTracker(imnames[:5])
 
+ims = []
 for im,ft in lkt.track():
 	print 'tracking %d features' % len(ft)
+
 
 # plot the tracks
 imshow(im) 
@@ -23,3 +25,4 @@ for t in lkt.tracks:
 	plot([p[1] for p in t],[p[0] for p in t]) 
 axis('off')
 show()
+

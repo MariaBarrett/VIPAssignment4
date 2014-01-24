@@ -27,6 +27,7 @@ class LKTracker(object):
 		""" Compute the Harris corner detector response function
 		for each pixel in a graylevel image. Return corners from a Harris response image
 		min_dist is the minimum number of pixels separating corners and image boundary. """
+		print "Finding useful features."
 
 		self.image = cv2.imread(self.imnames[self.current_frame])
 		self.gray = cv2.cvtColor(self.image,cv2.COLOR_BGR2GRAY)
@@ -74,6 +75,8 @@ class LKTracker(object):
 		self.tracks = [[p] for p in filtered_coords.reshape((-1,2))]
 		self.prev_gray = self.gray
 
+		print "Done."
+
 
 
 	"""Here we track the detected features. Surprising eh?
@@ -103,6 +106,7 @@ class LKTracker(object):
 		for i in range(len(tmpf)):
 			self.features[i][0] = self.features[i][0]+tmpf[i][0]
 			self.features[i][1] = self.features[i][1]+tmpf[i][1]
+		print self.tracks
 		
 		#clean tracks from lost points
 		self.prev_gray = self.gray
@@ -111,12 +115,8 @@ class LKTracker(object):
 	""" Here we do the necessary derivations as to satisfy the Harris matrix later on. 
 	"""
 	def deriv(self,im1, im2):
-	   """
-	   g = self.gauss_kern()
-	   Img_smooth = si.convolve(im1,g,mode='same')
-	   """
 	   fx,fy=gradient(im1)  
-	   ft = si.convolve2d(im1, 0.25 * ones((2,2))) + si.convolve2d(im2, -0.25 * ones((2,2)))
+	   ft = si.convolve2d(im1, 0.25 * ones((1,1))) + si.convolve2d(im2, -0.25 * ones((1,1)))
 	                 
 	   fx = fx[0:fx.shape[0]-1, 0:fx.shape[1]-1]  
 	   fy = fy[0:fy.shape[0]-1, 0:fy.shape[1]-1]
@@ -124,9 +124,38 @@ class LKTracker(object):
 	   
 	   return fx, fy, ft
 	
-	
-	""" Here's a bet on how the bloody Lucas-Kanade can be written. 
-	"""
+
+	""" """
+	def lk2(self, im1, im2, i, j, window_size):
+
+		""" Here we want to create the Harris matrix"""
+		imx = zeros(self.gray.shape)
+		filters.gaussian_filter(self.gray, (self.sigma,self.sigma), (0,1), imx) 
+		imy = zeros(self.gray.shape)
+		filters.gaussian_filter(self.gray, (self.sigma,self.sigma), (1,0), imy)
+
+			# compute components of the Harris matrix
+		Wxx = filters.gaussian_filter(imx*imx,self.sigma) 
+		Wxy = filters.gaussian_filter(imx*imy,self.sigma) 
+		Wyy = filters.gaussian_filter(imy*imy,self.sigma) 
+		
+		HM = array([Wxx,Wxy],
+					[Wxy,Wyy])
+
+		""" Here we want to create the residual matrix """
+		fx, fy, ft = self.deriv(im1, im2)
+		hwin = window_size/2
+		Fx = fx[i-hwin-1:i+hwin,
+		          j-hwin-1:j+hwin]
+		Fy = fy[i-hwin-1:i+hwin,
+		          j-hwin-1:j+hwin]
+		Ft = ft[i-hwin-1:i+hwin,
+		          j-hwin-1:j+hwin]
+
+
+
+
+	""" Here's a bet on how the bloody Lucas-Kanade can be written. """
 	def lk(self, im1, im2, i, j, window_size):
 		fx, fy, ft = self.deriv(im1, im2)
 		hwin = floor(window_size/2)
@@ -146,8 +175,8 @@ class LKTracker(object):
 		Ft = -Ft.flatten(order='F')
 
 		A = vstack((Fx, Fy)).T
-		U = dot(dot(lin.pinv(dot(A.T,A)),A.T),Ft)
-
+		A = dot(lin.pinv(dot(A.T,A)),A.T)
+		U = dot(A,Ft)
 		return U[0], U[1]
 
 
