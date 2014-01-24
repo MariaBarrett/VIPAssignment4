@@ -22,8 +22,11 @@ figure()
 imshow(im)
 for p in ft:
 	plot(p[1],p[0],'bo')
+"""
 for t in lkt.tracks:
-	print t
-	plot([p[0][1] for p in t],[p[0][0] for p in t])
+	print t[0][0]
+	plot(t[0][1],t[0][0],'r-')
+	#plot([p[1] for p in t],[p[0] for p in t],'r-')
+"""
 axis('off')
 show()

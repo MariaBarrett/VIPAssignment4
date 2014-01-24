@@ -93,9 +93,11 @@ class LKTracker(object):
 		#print tmp
 		#print type(tmp)
 		tmpf=[]
+		ims1 = filters.gaussian_filter(self.prev_gray,self.sigma)
+		ims2 = filters.gaussian_filter(self.gray,self.sigma)
 		for elem in tmp:
 			inner = []
-			inner = self.lk(self.prev_gray,self.gray,elem[0][0],elem[0][1],15)
+			inner = self.lk(ims1,ims2,elem[0][0],elem[0][1],15)
 			tmpf.append(inner)
 
 		for i in range(len(tmpf)):
@@ -105,14 +107,6 @@ class LKTracker(object):
 		#clean tracks from lost points
 		self.prev_gray = self.gray
 
-	def gauss_kern(self):
-	   h1 = 15
-	   h2 = 15
-	   x, y = mgrid[0:h2, 0:h1]
-	   x = x-h2/2
-	   y = y-h1/2
-	   g = exp( -( x**2 + y**2 ) / (2*self.sigma**2) );
-	   return g / g.sum()
 
 	""" Here we do the necessary derivations as to satisfy the Harris matrix later on. 
 	"""
@@ -121,8 +115,7 @@ class LKTracker(object):
 	   g = self.gauss_kern()
 	   Img_smooth = si.convolve(im1,g,mode='same')
 	   """
-	   Img_smooth = filters.gaussian_filter(im1,self.sigma)
-	   fx,fy=gradient(Img_smooth)  
+	   fx,fy=gradient(im1)  
 	   ft = si.convolve2d(im1, 0.25 * ones((2,2))) + si.convolve2d(im2, -0.25 * ones((2,2)))
 	                 
 	   fx = fx[0:fx.shape[0]-1, 0:fx.shape[1]-1]  
