@@ -22,7 +22,7 @@ class LKTracker(object):
 		self.current_frame = 0
 
 
-	def harris(self,sigma=1.4,min_dist=10,threshold=0.01):
+	def harris(self,sigma=1.4,min_dist=10,threshold=0.03):
 		""" Compute the Harris corner detector response function
 		for each pixel in a graylevel image. Return corners from a Harris response image
 		min_dist is the minimum number of pixels separating corners and image boundary. """
@@ -74,6 +74,7 @@ class LKTracker(object):
 		self.prev_gray = self.gray
 
 
+
 	"""Here we track the detected features. Surprising eh?
 	 We utilize the found features and try to calculate the OpticalFlow with the Lucas-Kanade method"""
 	def track_points(self):
@@ -86,20 +87,17 @@ class LKTracker(object):
 
 		#reshape to fit input format
 		tmp = float32(self.features).reshape(-1, 1, 2)
+		tmpf = []
 
-		self.features = self.lk(self.prev_gray,self.gray,0,0,15)
+		#print tmp
+		print type(tmp)
+		for elem in tmp:
+			tmpf = self.lk(self.prev_gray,self.gray,elem[0][0],elem[0][1],15)
+		print tmpf
 		
-		features = self.features
+
+		print len(self.features)
 		#clean tracks from lost points
-		"""
-		features = array(features).reshape((-1,2))
-		for i,f in enumerate(features):
-			self.tracks[i].append(f)
-		ndx = [i for (i,st) in enumerate(status) if not st]
-		ndx.reverse() #remove from back
-		for i in ndx:
-			self.tracks.pop(i)
-		"""
 		self.prev_gray = self.gray
 
 	def gauss_kern(self):
@@ -186,5 +184,4 @@ class LKTracker(object):
 		#create a copy in RGB
 		f = array(self.features).reshape(-1,2)
 		im = cv2.cvtColor(self.image,cv2.COLOR_BGR2RGB)
-		print im
 		yield im,f

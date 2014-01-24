@@ -10,7 +10,7 @@ imnames = sorted(imnames)
 
 
 #create tracker object
-lkt = lktrack.LKTracker(imnames[:25])
+lkt = lktrack.LKTracker(imnames[:5])
 
 for im,ft in lkt.track():
 	print 'Tracking %d features' %len(ft)
@@ -21,7 +21,7 @@ for im,ft in lkt.track():
 figure()
 imshow(im)
 for p in ft:
-	plot(p[0],p[1],'bo')
+	plot(p[1],p[0],'bo')
 for t in lkt.tracks:
 	plot([p[0] for p in t],[p[1] for p in t])
 axis('off')
