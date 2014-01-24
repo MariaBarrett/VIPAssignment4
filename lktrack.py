@@ -89,7 +89,7 @@ class LKTracker(object):
 	 We utilize the found features and try to calculate the OpticalFlow with the Lucas-Kanade method"""
 	def our_track_points(self):
 		if self.features != []:
-			self.step() #move to the next frame - surprisign too eh!
+			self.step() #move to the next frame - surprising too eh!
 
 		#load the images and create grayscale
 		self.image = cv2.imread(self.imnames[self.current_frame])
@@ -117,8 +117,9 @@ class LKTracker(object):
 
 		self.prev_gray = self.gray
 
+
+	""" Track the detected features using OpenCV. The code is copied from Jan Erik Solem "Programming Computer Vision with Python"""
 	def CV_track_points(self):
-		""" Track the detected features using OpenCV. The code is copied from Jan Erik Solem "Programming Computer Vision with Python"""
 		if self.features != []:
 			self.step() # move to the next frame
 	    
@@ -144,6 +145,7 @@ class LKTracker(object):
 		for i in ndx:
 	    		self.tracks.pop(i)
 		self.prev_gray = self.gray
+
 
 	""" Here we do the necessary derivations as to satisfy the Harris matrix later on. 
 	"""
@@ -211,7 +213,7 @@ class LKTracker(object):
 			if self.features == []:
 				self.harris()
 			else:
-				self.CV_track_points() # change between self.our_track_points() and self.CV_track_points()
+				self.our_track_points() # change between self.our_track_points() and self.CV_track_points()
 
 		#create a copy in RGB
 		f = array(self.features).reshape(-1,2)
